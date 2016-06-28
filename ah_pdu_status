@@ -1,0 +1,43 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+# Austin Hughes PDU Status Check
+# 2016, Rob M-B
+
+def inventory_ah_pdu_status(info):
+    inventory = []
+    for line in info:
+        name = str(line[0])
+        yield name, None
+
+def check_ah_pdu_status(item, params, info):
+    for id, model, name, loc, amp, power, appower in info:
+        if item == str(id):
+           amp = int(amp)
+           power = int(power)
+           appower = int(appower)
+           realamp = float(amp) / 10
+           realpower = float(power) / 100
+           realapp = float(appower) / 100
+	   perfdata = [("current", realamp), ("power", realpower), ("aparrentpower", realapp)]
+           return (0, "OK - Name: " + name +  ", Model: " + model + ", Location: %s" % loc, perfdata)
+    else:
+           return (3, "UNKNOWN - PDU not contactable")
+	
+
+
+
+check_info["ah_pdu_status"] = {
+    'check_function':          check_ah_pdu_status,
+    'inventory_function':      inventory_ah_pdu_status,
+    'service_description':     'PDU %s',
+    'has_perfdata':            True,
+    'snmp_info':               ('.1.3.6.1.4.1.34550.20.2.1.1.1', [
+                                    '1',
+                                    '2',
+                                    '6',
+                                    '7',
+                                    '14',
+                                    '17', '18'
+                                ]),
+    'snmp_scan_function':      lambda oid: "InfraPower" in oid(".1.3.6.1.4.1.34550.20.1.1.1.0")
+}

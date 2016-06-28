@@ -1,0 +1,47 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+# Austin Hughes PDU Status Check
+# 2016, Rob M-B
+
+def inventory_ah_circuit_status(info):
+    inventory = []
+    for line in info:
+        name = str(line[0]) 
+        yield name, None
+
+def check_ah_circuit_status(item, params, info):
+    for oid, index, rating, name, state, voltage, amp, cumulative, breakerstate, loadalarm in info:
+        if item == str(oid):
+           amp = int(amp)
+           voltage = int(voltage)
+           realamp = float(amp) / 10
+           realvoltage = float(voltage) / 10
+           realloadalarm = float(loadalarm) / 10
+           realrating = float(rating) / 10
+	   perfdata = [("current", realamp, realloadalarm, realrating), ("voltage", realvoltage)]
+           if int(state) == 0:
+	    return (0, "OK - " + name + " Rated "  + str(realrating) + "A", perfdata)
+           if int(state) == 1:
+            return (1, "Warning - Over Load Alarm - " + name + " Rated "  + str(realrating) + "A", perfdata)
+           if int(breakerstate) == 1:
+            return (2, "Warning - Circuit Breaker Tripped - " + name + " Rated "  + str(realrating) + "A", perfdata)
+    else:
+        return (3, "UNKNOWN - Circuit not available")
+	
+
+
+
+check_info["ah_circuit_status"] = {
+    'check_function':          check_ah_circuit_status,
+    'inventory_function':      inventory_ah_circuit_status,
+    'service_description':     'Circuit %s',
+    'has_perfdata':            True,
+    'snmp_info':               ('.1.3.6.1.4.1.34550.20.2.1.1.1.24.1.1', [OID_END,
+                                    '1',
+                                    '2','4','5',
+                                    '6',
+                                    '7','13',
+                                    '15','16'
+                                ]),
+    'snmp_scan_function':      lambda oid: "InfraPower" in oid(".1.3.6.1.4.1.34550.20.1.1.1.0")
+}
