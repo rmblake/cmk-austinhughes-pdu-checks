@@ -6,7 +6,7 @@
 def inventory_ah_C19outlet_status(info):
     inventory = []
     for line in info:
-        if int(line[5]) == 1:
+#        if int(line[5]) == 1:
            name = str(line[0]) 
            yield name, None
 
@@ -15,21 +15,32 @@ def check_ah_C19outlet_status(item, params, info):
         if item == str(oid):
            if str(loadalarm) == "-":
               loadalarm = 10
-           realamp = float(amp) / 10
-           realpower = float(power) / 100
-           realloadalarm = float(loadalarm) / 10
            types = [("1", "IEC C13"), ("2", "IEC C19"), ("3", "BS1363"), ("4", "NEMA 5-20R"), ("5", "CEE7")]
 	   realtype = "Unknown" 
            for num, skname in types:
               if num == str(type):
                  realtype = skname
-           perfdata = [("current", realamp, realloadalarm, 13.0), ("power", realpower)]
-           if int(status) == 0:
-            return (2, "Critical - Socket Off - " + str(name) + ": " + realtype + " Socket", perfdata)
-           if int(state) == 0:
-	    return (0, "OK - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
-           if int(state) == 1:
-            return (1, "Warning - Over Load Alarm - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
+	   if int(status) == 0:
+             return (2, "Critical - Socket Off - " + str(name) + ": " + realtype + " Socket", [])
+
+           if str(amp) != "---":
+               realamp = float(amp) / 10
+               realpower = float(power) / 100
+               realloadalarm = float(loadalarm) / 10
+               perfdata = [("current", realamp, realloadalarm, 13.0), ("power", realpower)]
+               if int(state) == 0:
+	          return (0, "OK - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
+               if int(state) == 1:
+                  return (1, "Warning - Over Load Alarm - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
+               if int(state) == 2:
+                  return (1, "Warning - Rising Alarm - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
+               if int(state) == 3:
+                  return (1, "Warning - Low Current Alarm - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
+               if int(state) == 4:
+                  return (3, "UNKNOWN - Socket Missing - " + str(name) + ": " + realtype + " Socket running at "  + str(realamp) + "A", perfdata)
+           else:
+               return (0, "OK - " + str(name) + ": " + realtype, None) 
+
     else:
         return (3, "UNKNOWN - Circuit not available")
 	
